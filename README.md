@@ -230,7 +230,7 @@ data:
 
 training:
   learning_rate: 1.0e-5
-  epochs: 150
+  epochs: 100
   gradient_accumulation_steps: 4
 ```
 
