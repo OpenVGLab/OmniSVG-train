@@ -411,4 +411,4 @@ We thank the following excellent open-source works:
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=OpenVGLab/OmniSVG-train&type=Date)](https://www.star-history.com/#OmniSVG/OmniSVG&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=OpenVGLab/OmniSVG-train&type=Date)](https://www.star-history.com/#OpenVGLab/OmniSVG-train&Date)
