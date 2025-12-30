@@ -15,14 +15,13 @@ class SketchDecoder(nn.Module):
     def __init__(self,
                  pix_len,
                  text_len,
-                 model_path="/mnt/jfs-test/Qwen2.5-VL-7B-Instruct", # 将路径作为参数传入
+                 model_path="Qwen/Qwen2.5-VL-3B-Instruct", 
                  **kwargs):
         super().__init__()
         
         self.pix_len = pix_len
         self.text_len = text_len
         
-        # 词表配置
         self.vocab_size = 197000
         self.bos_token_id = 196998
         self.eos_token_id = 196999
@@ -44,15 +43,13 @@ class SketchDecoder(nn.Module):
             model_path,
             config=config,
             torch_dtype=torch.bfloat16,
-            #attn_implementation="flash_attention_2",
+            #attn_implementation="flash_attention_2", 
             #device_map ="cuda",
             ignore_mismatched_sizes=True
         )
 
-        # 调整词表大小
         self.transformer.resize_token_embeddings(self.vocab_size)
         
-        # 默认开启训练模式
         self.train()
 
     def forward(self, 
