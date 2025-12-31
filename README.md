@@ -303,7 +303,7 @@ accelerate launch train.py \
 python train.py --model_size 4B --use_flash_attn --data_dir ./data --batch_size 1
 
 # Multi-GPU training with DeepSpeed
-accelerate launch --config_file ./configs/deepspeed_zero2.yaml \
+accelerate launch --config_file ./configs/zero_stage2.yaml \
     train.py --model_size 8B --use_flash_attn --data_dir ./data
 
 # List available models and datasets
