@@ -14,7 +14,8 @@ MODEL_SIZE="4B"
 
 # Enable Flash Attention 2 for faster training (recommended)
 # Set to "true" or "false"
-USE_FLASH_ATTN="true"
+USE_FLASH_ATTN="false"  
+
 
 # Number of GPUs to use
 NUM_GPUS=8

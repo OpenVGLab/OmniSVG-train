@@ -467,4 +467,8 @@ We thank the following excellent open-source works:
 
 ## Star History
 
+<<<<<<< HEAD
 [![Star History Chart](https://api.star-history.com/svg?repos=OpenVGLab/OmniSVG-train&type=Date)](https://www.star-history.com/#OpenVGLab/OmniSVG-train&Date)
+=======
+[![Star History Chart](https://api.star-history.com/svg?repos=OpenVGLab/OmniSVG-train&type=Date)](https://www.star-history.com/#OpenVGLab/OmniSVG-train&Date)
+>>>>>>> 36d540914a6ed1735fb5212dfa02cabb7f5dbe45
