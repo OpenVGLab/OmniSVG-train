@@ -146,8 +146,8 @@ class SVGPath:
     '''
     @staticmethod
     def from_xml(x: minidom.Element):
-        # 获取 fill 属性
-        fill = x.getAttribute("fill") or "#000000"  # Default to black if not specified
+        # 获取 fill 属性 - 保留原始颜色,不设置默认值
+        fill = x.getAttribute("fill") if x.hasAttribute("fill") else "none"
         fill_opacity = float(x.getAttribute("fill-opacity")) if x.hasAttribute("fill-opacity") else 1.0
         if fill_opacity == 0.0:
             fill_opacity = 1.0
@@ -288,7 +288,7 @@ class SVGPath:
             svg_paths.append(svg_path)
             #print("Final SVGPath added to SVGPathGroup.")
 
-        return SVGPathGroup(svg_paths, fill=fill, fill_opacity=fill_opacity, fill_rule=fill_rule,stroke_opacity=stroke_opacity, stroke=stroke, stroke_width=stroke_width, dasharray=dasharray)
+        return SVGPathGroup(svg_paths, color=fill, fill=fill, fill_opacity=fill_opacity, fill_rule=fill_rule,stroke_opacity=stroke_opacity, stroke=stroke, stroke_width=stroke_width, dasharray=dasharray)
 
 
     def __repr__(self):

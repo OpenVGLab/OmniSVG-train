@@ -382,9 +382,7 @@ def create_collate_fn(
     Returns:
         Collate function
     """
-    system_prompt = """You are an expert SVG code generator. 
-Generate precise, valid SVG path commands that accurately represent the described scene or object.
-Focus on capturing key shapes, spatial relationships, and visual composition."""
+    system_prompt = "You are an expert SVG code generator."
 
     def collate_fn(batch):
         text_oris, pil_images, pix_seq_lists = zip(*batch)
@@ -400,19 +398,13 @@ Focus on capturing key shapes, spatial relationships, and visual composition."""
         for text_ori, pil_image, task_type in zip(text_oris, pil_images, task_assignments):
             if task_type == 'text':
                 # Text-to-SVG task
-                instruction = f"""Generate an SVG illustration for: {text_ori}
-
-Requirements:
-- Create complete SVG path commands
-- Include proper coordinates and colors
-- Maintain visual clarity and composition"""
                 
                 messages = [{
                     "role": "system",
                     "content": system_prompt
                 }, {
                     "role": "user",
-                    "content": [{"type": "text", "text": instruction}]
+                    "content": [{"type": "text", "text": "Generate SVG code for this text description: {text}"}]
                 }]
                 batch_task_types.append("text")
             else:

@@ -36,17 +36,18 @@ class SVGPrimitive:
 
 
     def _get_fill_attr(self):
+        # Use self.color for both fill and stroke to preserve original colors
+        # Only add stroke when fill is False (outline mode)
         if self.fill:
-            fill_attr = f'fill="{self.color}" fill-opacity="1.0"'
+            # Fill mode: use color as fill
+            fill_attr = f'fill="{self.color}" fill-opacity="{self.fill_opacity if self.fill_opacity > 0 else 1.0}"'
         else:
-            fill_attr = 'fill="none"'
-        
-        stroke_attr = f' stroke="{self.stroke_color}" stroke-width="{self.stroke_width}" stroke-opacity="{self.stroke_opacity}"'
-    
-        if self.dasharray is not None and not self.fill:
-            stroke_attr += f' stroke-dasharray="{self.dasharray}"'
-    
-        return fill_attr + stroke_attr
+            # Outline mode: use color as stroke
+            fill_attr = f'fill="none" stroke="{self.color}" stroke-width="{self.stroke_width}" stroke-opacity="{self.stroke_opacity}"'
+            if self.dasharray is not None:
+                fill_attr += f' stroke-dasharray="{self.dasharray}"'
+
+        return fill_attr
 
 
     @classmethod

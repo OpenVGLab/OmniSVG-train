@@ -20,13 +20,13 @@ USE_FLASH_ATTN="true"
 NUM_GPUS=8
 
 # Batch size per GPU
-BATCH_SIZE=2
+BATCH_SIZE=4
 
 # Maximum SVG sequence length
-MAX_SEQ_LENGTH=512
+MAX_SEQ_LENGTH=2048
 
 # Data directory (should contain: train_meta.csv, val_meta.csv, svg/, png/)
-DATA_DIR="/data/cref/OmniSVG-code/utils/data"
+DATA_DIR="./data"
 
 # Output directory for checkpoints and logs
 OUTPUT_DIR="./output"
@@ -34,47 +34,15 @@ OUTPUT_DIR="./output"
 # Project name (leave empty for auto-generated name)
 PROJECT_NAME=""
 
-# ==============================================================================
-# Resume from checkpoint configuration
-# ==============================================================================
+# Resume from checkpoint
 # Options:
-#   - "": Start from scratch (no checkpoint)
-#   - "auto": Download and use official OmniSVG checkpoint based on MODEL_SIZE
-#   - "OmniSVG/OmniSVG1.1_4B": Specific HuggingFace repo ID for 4B model
-#   - "OmniSVG/OmniSVG1.1_8B": Specific HuggingFace repo ID for 8B model
-#   - "/path/to/local/checkpoint": Resume from specific local checkpoint
-
-# For 4B model, use one of:
-# RESUME_CHECKPOINT=""                        # Train from scratch
-# RESUME_CHECKPOINT="auto"                    # Auto-download 4B checkpoint
-# RESUME_CHECKPOINT="OmniSVG/OmniSVG1.1_4B"  # Explicit 4B checkpoint
-
-# For 8B model, use one of:
-# RESUME_CHECKPOINT=""                        # Train from scratch
-# RESUME_CHECKPOINT="auto"                    # Auto-download 8B checkpoint
-# RESUME_CHECKPOINT="OmniSVG/OmniSVG1.1_8B"  # Explicit 8B checkpoint
-
-# Set checkpoint based on MODEL_SIZE (uncomment ONE option below)
-
-# Option 1: Automatically select checkpoint based on MODEL_SIZE
-if [ "$MODEL_SIZE" = "4B" ]; then
-    RESUME_CHECKPOINT="OmniSVG/OmniSVG1.1_4B"
-elif [ "$MODEL_SIZE" = "8B" ]; then
-    RESUME_CHECKPOINT="OmniSVG/OmniSVG1.1_8B"
-else
-    RESUME_CHECKPOINT=""
-fi
-
-# Option 2: Or manually set (uncomment to override)
-# RESUME_CHECKPOINT="OmniSVG/OmniSVG1.1_4B"   # Force 4B checkpoint
-# RESUME_CHECKPOINT="OmniSVG/OmniSVG1.1_8B"   # Force 8B checkpoint
-# RESUME_CHECKPOINT="auto"                     # Auto based on MODEL_SIZE
-# RESUME_CHECKPOINT=""                         # Train from scratch
-
-# ==============================================================================
+#   - "": Start from scratch
+#   - "auto": Download and use official OmniSVG checkpoint
+#   - "/path/to/checkpoint": Resume from specific checkpoint
+RESUME_CHECKPOINT=""
 
 # Use HuggingFace datasets (set to "true" to auto-download)
-USE_HF_DATA="false"
+USE_HF_DATA="true"
 
 # HuggingFace datasets to use (only if USE_HF_DATA="true")
 # Options: "illustration", "icon", or "illustration icon" (both)
@@ -156,37 +124,9 @@ echo "Output Directory:  ${OUTPUT_DIR}/${PROJECT_NAME}"
 echo "Use HF Data:       ${USE_HF_DATA}"
 if [ -n "$RESUME_CHECKPOINT" ]; then
 echo "Resume From:       ${RESUME_CHECKPOINT}"
-echo ""
-echo "Checkpoint Info:"
-if [ "$RESUME_CHECKPOINT" = "auto" ]; then
-    echo "  -> Will auto-download checkpoint for ${MODEL_SIZE} model"
-elif [[ "$RESUME_CHECKPOINT" == *"/"* ]] && [[ ! -d "$RESUME_CHECKPOINT" ]]; then
-    echo "  -> Will download from HuggingFace: ${RESUME_CHECKPOINT}"
-else
-    echo "  -> Using local checkpoint: ${RESUME_CHECKPOINT}"
-fi
-else
-echo "Resume From:       (training from scratch)"
 fi
 echo "============================================================"
 echo ""
-
-# ==============================================================================
-# Verify Configuration
-# ==============================================================================
-
-# Verify checkpoint matches model size (warning only)
-if [ -n "$RESUME_CHECKPOINT" ] && [ "$RESUME_CHECKPOINT" != "auto" ]; then
-    if [ "$MODEL_SIZE" = "4B" ] && [[ "$RESUME_CHECKPOINT" == *"8B"* ]]; then
-        echo "WARNING: Model size is 4B but checkpoint appears to be for 8B!"
-        echo "         This may cause issues. Press Ctrl+C to cancel, or wait 5 seconds to continue..."
-        sleep 5
-    elif [ "$MODEL_SIZE" = "8B" ] && [[ "$RESUME_CHECKPOINT" == *"4B"* ]]; then
-        echo "WARNING: Model size is 8B but checkpoint appears to be for 4B!"
-        echo "         This may cause issues. Press Ctrl+C to cancel, or wait 5 seconds to continue..."
-        sleep 5
-    fi
-fi
 
 # ==============================================================================
 # Verify Data Directory

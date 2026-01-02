@@ -3,10 +3,11 @@
 <div align="center">
 <a href='https://arxiv.org/abs/2504.06263'><img src='https://img.shields.io/badge/arXiv-2504.06263-b31b1b.svg'></a> &nbsp;&nbsp;&nbsp;&nbsp;
  <a href='https://omnisvg.github.io/'><img src='https://img.shields.io/badge/Project-Page-Green'></a> &nbsp;&nbsp;&nbsp;&nbsp;
-<a href="https://huggingface.co/OmniSVG/OmniSVG1.1_8B"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Weights-HF-orange"></a> &nbsp;&nbsp;&nbsp;&nbsp;
+<a href="https://huggingface.co/OmniSVG/OmniSVG1.1_8B"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Model-HF-orange"></a> &nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://huggingface.co/OmniSVG"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Dataset%20-HF-orange"></a> &nbsp;&nbsp;&nbsp;&nbsp;
-<a href="https://huggingface.co/datasets/OmniSVG/MMSVGBench"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Benchmark-HF-orange"></a> &nbsp;&nbsp;&nbsp;&nbsp;
-<a href="https://huggingface.co/spaces/OmniSVG/OmniSVG-3B"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Demo%20-HF-orange"></a>
+<a href="https://huggingface.co/datasets/OmniSVG/MMSVGBench"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Bench-HF-orange"></a> &nbsp;&nbsp;&nbsp;&nbsp;
+<a href="https://huggingface.co/spaces/OmniSVG/OmniSVG-3B"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Demo%20-HF-orange"></a> &nbsp;&nbsp;&nbsp;&nbsp;
+<a href='https://github.com/OpenVGLab/OmniSVG-train'><img src='https://img.shields.io/badge/Training-Code-blue?logo=github'></a>
 </div>
 
 ## 🔥🔥🔥 News !!
@@ -21,9 +22,6 @@
 - [2025/04/09] 👋 Upload paper and init project. [Read](https://arxiv.org/abs/2504.06263)
 
 
-<p align="center">
-    <img src="assets/OmniSVG-demo-gen-proc-anime-1080.gif" alt="Demo GIF" width="720px" />
-</p>
 
 ## 🧩 Community Contributions
 If you are developing / using OmniSVG in your projects, or you want to contribute to OmniSVG, please let us know 🎉.
@@ -100,6 +98,11 @@ Install remaining dependencies:
 pip install -r requirements.txt
 ```
 
+Install picosvg for SVG preprocessing:
+```bash
+pip install picosvg
+```
+
 #### (Optional) Flash Attention 2
 
 For faster training and inference, install Flash Attention 2:
@@ -160,10 +163,6 @@ python app.py
 
 Or try our [Online Demo on Hugging Face Spaces](https://huggingface.co/spaces/OmniSVG/OmniSVG-3B).
 
-<div align="center">
-  <img src="assets/commands.png" alt="cmd" height="256px" />
-  <img src="assets/omnisvg-teaser.gif" alt="Demo GIF" height="256px" style="margin-right: 10px;" />
-</div>
 
 
 ## 5. Training
@@ -209,7 +208,63 @@ Or use the built-in data downloader:
 python -m utils.data_downloader --output_dir ./data --datasets illustration icon
 ```
 
-### 5.2 Configuration
+### 5.2 SVG Data Preprocessing
+
+Before training, SVG files need to be preprocessed to ensure compatibility with the model. We provide a preprocessing script that:
+
+- **Simplifies SVG syntax** using `picosvg` (removes unnecessary groups, transforms, rect elements, etc.)
+- **Normalizes dimensions** to 200×200 pixels
+- **Optionally simplifies paths** for more efficient tokenization
+
+#### Single File Processing
+
+```bash
+# Basic preprocessing
+python preprocess_svg.py --input file.svg --output processed.svg
+
+# With custom dimensions
+python preprocess_svg.py --input file.svg --output processed.svg --width 200 --height 200
+
+```
+
+#### Batch Directory Processing
+
+```bash
+# Process all SVGs in a directory
+python preprocess_svg.py --input_dir ./raw_svgs --output_dir ./processed_svgs
+
+```
+
+#### Processing Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--input` / `-i` | - | Single SVG file to process |
+| `--output` / `-o` | - | Output path for single file (auto-generated if not specified) |
+| `--input_dir` | - | Directory containing SVG files for batch processing |
+| `--output_dir` | - | Output directory for batch processing |
+| `--scale` | 1.0 | SVG zoom scale factor |
+| `--width` | 200 | Output SVG width in pixels |
+| `--height` | 200 | Output SVG height in pixels |
+| `--simplify` | False | Enable path simplification (arcs, heuristics, splitting) |
+| `--max_dist` | 5 | Maximum path length before splitting (used with `--simplify`) |
+
+#### What the Preprocessing Does
+
+1. **picosvg preprocessing**: Converts complex SVG features to simple paths
+   - Removes `<g>` groups and flattens structure
+   - Converts `<rect>`, `<circle>`, `<ellipse>` to `<path>` elements
+   - Removes transforms by baking them into coordinates
+   - Strips unsupported attributes and elements
+
+2. **Normalization**: Scales and centers the SVG to fit within the target dimensions (200×200 by default)
+
+3. **Path simplification** (optional):
+   - Simplifies arc commands
+   - Applies heuristic simplification
+   - Splits long paths for better tokenization
+
+### 5.3 Configuration
 
 The training system uses YAML configuration files located in the `configs/` directory:
 
@@ -230,11 +285,11 @@ data:
 
 training:
   learning_rate: 1.0e-5
-  epochs: 150
+  epochs: 100
   gradient_accumulation_steps: 4
 ```
 
-### 5.3 Training Commands
+### 5.4 Training Commands
 
 #### Using run.sh (Recommended)
 
@@ -301,16 +356,15 @@ accelerate launch train.py \
     --data_dir ./data
 ```
 
-### 5.4 Training Examples
+### 5.5 Training Examples
 
-See `run_examples.sh` for comprehensive training examples:
 
 ```bash
 # Single GPU training (for debugging)
 python train.py --model_size 4B --use_flash_attn --data_dir ./data --batch_size 1
 
 # Multi-GPU training with DeepSpeed
-accelerate launch --config_file ./configs/deepspeed_zero2.yaml \
+accelerate launch --config_file ./configs/zero_stage2.yaml \
     train.py --model_size 8B --use_flash_attn --data_dir ./data
 
 # List available models and datasets
@@ -318,7 +372,7 @@ python train.py --list_models
 python train.py --list_datasets
 ```
 
-### 5.5 Training Output
+### 5.6 Training Output
 
 Checkpoints and logs are saved to the output directory:
 
@@ -378,9 +432,9 @@ OmniSVG/
 ├── metrics/                   # Evaluation metrics
 ├── train.py                   # Training script
 ├── inference.py               # Inference script
+├── preprocess_svg.py             # SVG data preprocessing script
 ├── app.py                     # Gradio demo
 ├── run.sh                     # Training launch script
-├── run_examples.sh            # Training examples
 └── requirements.txt
 ```
 
@@ -413,4 +467,4 @@ We thank the following excellent open-source works:
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=OmniSVG/OmniSVG&type=Date)](https://www.star-history.com/#OmniSVG/OmniSVG&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=OpenVGLab/OmniSVG-train&type=Date)](https://www.star-history.com/#OpenVGLab/OmniSVG-train&Date)
