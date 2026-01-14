@@ -383,6 +383,8 @@ def create_collate_fn(
         Collate function
     """
     system_prompt = "You are an expert SVG code generator."
+    
+    task_counter = {"total": 0, "text": 0}
 
     def collate_fn(batch):
         text_oris, pil_images, pix_seq_lists = zip(*batch)
@@ -390,21 +392,30 @@ def create_collate_fn(
         batch_messages = []
         batch_task_types = []
         
-        # Balance tasks
-        half_batch = len(text_oris) // 2
-        task_assignments = ['text'] * half_batch + ['image'] * (len(text_oris) - half_batch)
-        np.random.shuffle(task_assignments)
+        task_assignments = []
+        for _ in range(len(text_oris)):
+            task_counter["total"] += 1
+            target_text_count = task_counter["total"] // 2
+            
+            if task_counter["text"] < target_text_count:
+                task_assignments.append("text")
+                task_counter["text"] += 1
+            else:
+                task_assignments.append("image")
+        
+        indices = list(range(len(task_assignments)))
+        np.random.shuffle(indices)
+        task_assignments = [task_assignments[i] for i in indices]
         
         for text_ori, pil_image, task_type in zip(text_oris, pil_images, task_assignments):
             if task_type == 'text':
                 # Text-to-SVG task
-                
                 messages = [{
                     "role": "system",
                     "content": system_prompt
                 }, {
                     "role": "user",
-                    "content": [{"type": "text", "text": "Generate SVG code for this text description: {text}"}]
+                    "content": [{"type": "text", "text": f"Generate SVG code for this text description: {text_ori}"}]
                 }]
                 batch_task_types.append("text")
             else:
@@ -426,6 +437,8 @@ def create_collate_fn(
         return batch_messages, list(pix_seq_lists), batch_task_types
     
     return collate_fn
+
+
 
 
 def process_mixed_batch(
