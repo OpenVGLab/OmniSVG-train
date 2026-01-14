@@ -502,13 +502,26 @@ class SVGPathGroup(SVGPrimitive):
         return self
 
     def translate(self, vec):
-        return self._apply_to_paths("translate", vec)
+        all_unique_geoms = set()
+        for path in self.svg_paths:
+            all_unique_geoms.update(path._get_unique_geoms())
+        for geom in all_unique_geoms:
+            geom.translate(vec)
+        return self
+
 
     def rotate(self, angle: Angle):
         return self._apply_to_paths("rotate", angle)
 
     def scale(self, factor):
-        return self._apply_to_paths("scale", factor)
+        all_unique_geoms = set()
+        for path in self.svg_paths:
+            all_unique_geoms.update(path._get_unique_geoms())
+    
+        for geom in all_unique_geoms:
+            geom.scale(factor)
+    
+          return self
 
     def numericalize(self, n=256):
         return self._apply_to_paths("numericalize", n)
