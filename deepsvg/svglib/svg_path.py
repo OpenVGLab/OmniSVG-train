@@ -119,26 +119,39 @@ class SVGPath:
 
     @staticmethod
     def from_xml(x: minidom.Element):
-        fill = x.getAttribute("fill") if x.hasAttribute("fill") else "none"
+        # 获取 fill 属性 - 区分空字符串和缺失属性
+        # 缺失 fill 属性或 fill="" 应该使用默认填充色（黑色）
+        # 只有显式设置 fill="none" 才表示不填充
+        if x.hasAttribute("fill"):
+            fill_attr = x.getAttribute("fill")
+            if fill_attr == "" or fill_attr.lower() == "none":
+                fill = "none"  # 显式不填充
+            else:
+                fill = fill_attr  # 使用指定颜色
+        else:
+            fill = "#000000"  # 缺失fill属性，使用默认黑色填充
+
         fill_opacity = float(x.getAttribute("fill-opacity")) if x.hasAttribute("fill-opacity") else 1.0
         if fill_opacity == 0.0:
             fill_opacity = 1.0
 
+        # 获取 fill-rule 属性，如果未指定则默认为 'nonzero'
         fill_rule = x.getAttribute("fill-rule") or 'nonzero'
         path_fill_rule = fill_rule
 
 
+        # 获取其他属性 (stroke, opacity, etc.)
         stroke = x.getAttribute("stroke") or None
         stroke_opacity = float(x.getAttribute("stroke-opacity")) if x.hasAttribute("stroke-opacity") else 1.0
         stroke_width = float(x.getAttribute("stroke-width")) if x.hasAttribute("stroke-width") else 3.0
 
+        #print(f"Parsed SVGPath: fill={fill}, fill-opacity={fill_opacity}, stroke={stroke}, stroke_width={stroke_width}, fill_rule={fill_rule}")
 
         s = x.getAttribute('d')
         svg_path = SVGPath.from_str(s, fill=fill, stroke=stroke, 
                                 fill_opacity=fill_opacity, stroke_opacity=stroke_opacity, stroke_width=stroke_width)
         svg_path.fill_rule = path_fill_rule
         return svg_path
-
 
     
     @staticmethod
@@ -194,7 +207,6 @@ class SVGPath:
                         svg_path.path_commands.append(empty_command)
                     svg_paths.append(svg_path)
 
-                # 创建新的 SVGPath，并传递颜色相关属性
                 svg_path = SVGPath(
                     [], 
                     command.start_pos.copy(), 
@@ -848,18 +860,7 @@ class SVGPath:
                 codes.extend([Path.CURVE4, Path.CURVE4, Path.CURVE4])
                 current_pos = command.end_pos
             elif isinstance(command, SVGCommandArc):
-                #print(f"SVGCommandArc properties: {dir(command)}")
-                '''
-                print(f"Types - x1: {type(x1 := current_pos.x)}, y1: {type(y1 := current_pos.y)}, "
-                  f"rx: {type(rx := command.rX)}, ry: {type(ry := command.rY)}, "
-                  f"phi: {type(phi := command.x_axis_rotation.degrees)}, "
-                  f"large_arc_flag: {type(large_arc_flag := command.large_arc_flag.flag)}, "
-                  f"sweep_flag: {type(sweep_flag := command.sweep_flag.flag)}, "
-                  f"x2: {type(x2 := command.end_pos.x)}, y2: {type(y2 := command.end_pos.y)}")
-                '''
-                # 确认参数类型
-                #print(f"Types - x1: {type(current_pos.x)}, y1: {type(current_pos.y)}, rx: {type(command.radius.rX)}, ry: {type(command.radius.rY)}, phi: {type(command.x_axis_rotation.degrees)}, large_arc_flag: {type(command.large_arc_flag.flag)}, sweep_flag: {type(command.sweep_flag.flag)}, x2: {type(command.end_pos.x)}, y2: {type(command.end_pos.y)}")
-    
+
                 beziers = arc_to_bezier(
                     x1=current_pos.x, y1=current_pos.y,
                     rx=command.rX, ry=command.rY,
@@ -873,7 +874,6 @@ class SVGPath:
                     continue
 
                 for bezier in beziers:
-                    # bezier 是包含四个点的列表 [start, control1, control2, end]
                     if not isinstance(bezier, list) or len(bezier) != 4:
                         print(f"Each bezier should be a list of 4 points, got {bezier} instead.")
                         continue
@@ -888,7 +888,6 @@ class SVGPath:
                 codes.append(Path.CLOSEPOLY)
                 vertices.append((current_pos.x, current_pos.y))
             else:
-                # 对于未处理的命令，您可以选择忽略或抛出异常
                 print(f"Unknown command type: {type(command)}")
                 pass
 
@@ -937,11 +936,9 @@ def arc_to_bezier(x1, y1, rx, ry, phi, large_arc_flag, sweep_flag, x2, y2, tol=1
     if not all(isinstance(param, (float, int, np.float32)) for param in [x1, y1, rx, ry, phi, large_arc_flag, sweep_flag, x2, y2]):
         raise TypeError("All parameters to arc_to_bezier must be numeric types.")
     
-    # 将角度转换为弧度
     phi_rad = radians(phi)
     cos_phi = cos(phi_rad)
     sin_phi = sin(phi_rad)
-    # 计算参数
     dx2 = (x1 - x2) / 2.0
     dy2 = (y1 - y2) / 2.0
     x1p = cos_phi * dx2 + sin_phi * dy2
@@ -1015,20 +1012,4 @@ def arc_to_bezier(x1, y1, rx, ry, phi, large_arc_flag, sweep_flag, x2, y2, tol=1
     return beziers
 
 
-def quantize_color(color_hex):
-    """将 24 位颜色量化为 12 位 (0-4095)"""
-    try:
-        # 检查颜色字符串是否为标准的 7 位 16 进制颜色代码
-        if isinstance(color_hex, str) and color_hex.startswith('#') and len(color_hex) == 7:
-            r = int(color_hex[1:3], 16) >> 4  # 将每个颜色通道量化到 4 位 (0-15)
-            g = int(color_hex[3:5], 16) >> 4
-            b = int(color_hex[5:7], 16) >> 4
-            # 合并 RGB 通道（每个通道 4 位，共 12 位）
-            return (r << 8) + (g << 4) + b  # 返回一个 12 位的整数 (0-4095)
-        else:
-                # 对于非标准格式的颜色，返回默认值
-            return 0
-    except (ValueError, TypeError):
-        # 捕获解析错误，返回默认值
-        print(f"Warning: Unable to parse color '{color_hex}'. Using default color token.")
-        return 0
+
