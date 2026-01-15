@@ -19,8 +19,6 @@ FLOAT_RE = re.compile(r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?")
 
 
 empty_command = SVGCommandMove(Point(0.))
-COLOR_TOKEN_START = 0  # 初始 token ID
-MAX_COLOR_TOKENS = 4098  # 最大颜色 token 数量
 
 class Orientation:
     COUNTER_CLOCKWISE = 0
@@ -118,72 +116,29 @@ class SVGPath:
                 cmd = x
             elif cmd is not None:
                 yield cmd, list(map(float, FLOAT_RE.findall(x)))
-    '''
+
     @staticmethod
     def from_xml(x: minidom.Element):
-        # 获取 fill 属性
-        fill = x.getAttribute("fill") if x.hasAttribute("fill") else "none"
-
-        fill_opacity = float(x.getAttribute("fill-opacity")) if x.hasAttribute("fill-opacity") else 1.0
-
-            
-
-        # 获取 fill-opacity 属性，如果未指定则默认为 1.0
-        #fill_opacity = float(x.getAttribute("fill-opacity")) if x.hasAttribute("fill-opacity") else 1.0
-
-        # 获取其他属性 (stroke, opacity, etc.)
-        stroke = x.getAttribute("stroke") or None
-        stroke_opacity = float(x.getAttribute("stroke-opacity")) if x.hasAttribute("stroke-opacity") else 1.0
-        stroke_width = float(x.getAttribute("stroke-width")) if x.hasAttribute("stroke-width") else 3.0
-
-        # 输出调试信息
-        print(f"Parsed SVGPath: fill={fill}, fill-opacity={fill_opacity}, stroke={stroke}, stroke_width={stroke_width}")
-
-        # 处理路径数据
-        s = x.getAttribute('d')
-        return SVGPath.from_str(s, fill=fill, stroke=stroke, 
-                                fill_opacity=fill_opacity, stroke_opacity=stroke_opacity, stroke_width=stroke_width)
-    '''
-    @staticmethod
-    def from_xml(x: minidom.Element):
-        # 获取 fill 属性 - 保留原始颜色,不设置默认值
         fill = x.getAttribute("fill") if x.hasAttribute("fill") else "none"
         fill_opacity = float(x.getAttribute("fill-opacity")) if x.hasAttribute("fill-opacity") else 1.0
         if fill_opacity == 0.0:
             fill_opacity = 1.0
 
-        # 获取 fill-rule 属性，如果未指定则默认为 'nonzero'
         fill_rule = x.getAttribute("fill-rule") or 'nonzero'
         path_fill_rule = fill_rule
 
-        '''
-        # 处理空或缺失的 fill 属性
-        if fill == "" or fill.lower() == "none":
-            print("Fill attribute is 'none' or empty, setting to fully transparent black.")
-            fill = "#000000"   # 将颜色设置为黑色
-            fill_opacity = 0.0  # 完全透明
-        else:
-            # 处理 fill 属性为非空或非 none 的情况
-            fill_opacity = float(x.getAttribute("fill-opacity")) if x.hasAttribute("fill-opacity") else 1.0
-        '''
 
-        # 获取其他属性 (stroke, opacity, etc.)
         stroke = x.getAttribute("stroke") or None
         stroke_opacity = float(x.getAttribute("stroke-opacity")) if x.hasAttribute("stroke-opacity") else 1.0
         stroke_width = float(x.getAttribute("stroke-width")) if x.hasAttribute("stroke-width") else 3.0
 
-        # 输出调试信息
-        #print(f"Parsed SVGPath: fill={fill}, fill-opacity={fill_opacity}, stroke={stroke}, stroke_width={stroke_width}, fill_rule={fill_rule}")
 
-        # 处理路径数据
         s = x.getAttribute('d')
         svg_path = SVGPath.from_str(s, fill=fill, stroke=stroke, 
                                 fill_opacity=fill_opacity, stroke_opacity=stroke_opacity, stroke_width=stroke_width)
-        # 将 fill_rule 作为属性添加到 SVGPath 对象
         svg_path.fill_rule = path_fill_rule
         return svg_path
-        #return SVGPath.from_str(s, fill=fill, stroke=stroke, 
-        #                    fill_opacity=fill_opacity, stroke_opacity=stroke_opacity, stroke_width=stroke_width, fill_rule=fill_rule)
+
 
     
     @staticmethod
